@@ -7,7 +7,82 @@ provider "azurerm" {
   tenant_id       = var.tenant_id
 }
 
-resource "azurerm_resource_group" "openshiftsandbox" {
-  name     = var.resource_group_name
-  location = var.location
+# Reference the existing Resource Group
+data "azurerm_resource_group" "openshift" {
+  name = "OpenShiftSandboxAzure"
+}
+
+# Create a Virtual Network
+resource "azurerm_virtual_network" "example" {
+  name                = "openshift-vnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.openshift.location
+  resource_group_name = azurerm_resource_group.openshift.name
+}
+
+# Create a Subnet
+resource "azurerm_subnet" "example" {
+  name                 = "openshift-subnet"
+  resource_group_name  = azurerm_resource_group.openshift.name
+  virtual_network_name = azurerm_virtual_network.example.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+# Create a Network Interface
+resource "azurerm_network_interface" "example" {
+  name                = "openshift-nic"
+  location            = azurerm_resource_group.openshift.location
+  resource_group_name = azurerm_resource_group.openshift.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.example.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+# Create a Virtual Machine
+resource "azurerm_linux_virtual_machine" "openshift" {
+  name                = "OpenShiftSandbox"
+  location            = azurerm_resource_group.openshift.location
+  resource_group_name = azurerm_resource_group.openshift.name
+  network_interface_ids = [azurerm_network_interface.example.id]
+  size                = "Standard_DS1_v2"
+
+  # Set up the OS disk
+  os_disk {
+    name              = "openshift-osdisk"
+    caching           = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  # Use the latest Ubuntu 24.04 LTS image
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "24_04-lts-gen2"
+    version   = "latest"
+  }
+
+  # OS profile
+  os_profile {
+    computer_name  = "OpenShiftSandbox"
+    admin_username = var.admin_username
+    admin_password = var.admin_password
+  }
+
+  # Linux specific configuration
+  os_profile_linux_config {
+    disable_password_authentication = false
+
+    ssh_keys {
+      path     = "/home/${var.admin_username}/.ssh/authorized_keys"
+      key_data = var.ssh_public_key
+    }
+  }
+}
+
+# Output the public IP address of the VM (optional)
+output "public_ip" {
+  value = azurerm_network_interface.example.private_ip_address
 }
