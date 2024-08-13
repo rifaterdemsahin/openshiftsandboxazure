@@ -48,6 +48,14 @@ resource "azurerm_linux_virtual_machine" "openshift" {
   resource_group_name = data.azurerm_resource_group.openshift.name
   network_interface_ids = [azurerm_network_interface.example.id]
   size                = "Standard_DS1_v2"
+  
+  # Admin username and SSH key
+  admin_username      = var.admin_username
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = var.ssh_public_key
+  }
 
   # Set up the OS disk
   os_disk {
@@ -64,22 +72,8 @@ resource "azurerm_linux_virtual_machine" "openshift" {
     version   = "latest"
   }
 
-  # OS profile
-  os_profile {
-    computer_name  = "OpenShiftSandbox"
-    admin_username = var.admin_username
-    admin_password = var.admin_password
-  }
-
-  # Linux specific configuration
-  os_profile_linux_config {
-    disable_password_authentication = false
-
-    ssh_keys {
-      path     = "/home/${var.admin_username}/.ssh/authorized_keys"
-      key_data = var.ssh_public_key
-    }
-  }
+  disable_password_authentication = false
+  admin_password                  = var.admin_password
 }
 
 # Output the private IP address of the VM (optional)
