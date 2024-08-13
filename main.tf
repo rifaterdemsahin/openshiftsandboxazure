@@ -7,15 +7,15 @@ provider "azurerm" {
   tenant_id       = var.tenant_id
 }
 
-# Reference the existing Resource Group
-data "azurerm_resource_group" "openshift" {
-  name = "OpenShiftSandboxAzure"
-}
-
 # Create the Resource Group if it doesn't exist
 resource "azurerm_resource_group" "openshift" {
   name     = "OpenShiftSandboxAzure"
   location = var.location
+}
+
+# Reference the existing Resource Group
+data "azurerm_resource_group" "openshift" {
+  name = "OpenShiftSandboxAzure"
 }
 
 # Create a Virtual Network
