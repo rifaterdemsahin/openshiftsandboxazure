@@ -16,14 +16,14 @@ data "azurerm_resource_group" "openshift" {
 resource "azurerm_virtual_network" "example" {
   name                = "openshift-vnet"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.openshift.location
-  resource_group_name = azurerm_resource_group.openshift.name
+  location            = data.azurerm_resource_group.openshift.location
+  resource_group_name = data.azurerm_resource_group.openshift.name
 }
 
 # Create a Subnet
 resource "azurerm_subnet" "example" {
   name                 = "openshift-subnet"
-  resource_group_name  = azurerm_resource_group.openshift.name
+  resource_group_name  = data.azurerm_resource_group.openshift.name
   virtual_network_name = azurerm_virtual_network.example.name
   address_prefixes     = ["10.0.1.0/24"]
 }
@@ -31,8 +31,8 @@ resource "azurerm_subnet" "example" {
 # Create a Network Interface
 resource "azurerm_network_interface" "example" {
   name                = "openshift-nic"
-  location            = azurerm_resource_group.openshift.location
-  resource_group_name = azurerm_resource_group.openshift.name
+  location            = data.azurerm_resource_group.openshift.location
+  resource_group_name = data.azurerm_resource_group.openshift.name
 
   ip_configuration {
     name                          = "internal"
@@ -44,8 +44,8 @@ resource "azurerm_network_interface" "example" {
 # Create a Virtual Machine
 resource "azurerm_linux_virtual_machine" "openshift" {
   name                = "OpenShiftSandbox"
-  location            = azurerm_resource_group.openshift.location
-  resource_group_name = azurerm_resource_group.openshift.name
+  location            = data.azurerm_resource_group.openshift.location
+  resource_group_name = data.azurerm_resource_group.openshift.name
   network_interface_ids = [azurerm_network_interface.example.id]
   size                = "Standard_DS1_v2"
 
@@ -82,7 +82,7 @@ resource "azurerm_linux_virtual_machine" "openshift" {
   }
 }
 
-# Output the public IP address of the VM (optional)
-output "public_ip" {
+# Output the private IP address of the VM (optional)
+output "private_ip" {
   value = azurerm_network_interface.example.private_ip_address
 }
