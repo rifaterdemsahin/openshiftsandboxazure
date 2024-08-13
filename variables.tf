@@ -39,3 +39,8 @@ variable "tenant_id" {
   description = "The tenant ID for Azure"
   type        = string
 }
+
+variable "ssh_public_key" {
+  description = "The SSH public key for accessing the virtual machine"
+  type        = string
+}
